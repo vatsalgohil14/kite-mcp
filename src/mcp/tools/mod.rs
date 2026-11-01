@@ -7,7 +7,8 @@ mod portfolio;
 
 /// Rounds to 2 decimals to keep tool output compact.
 pub(crate) fn r2(x: f64) -> f64 {
-    (x * 100.0).round() / 100.0
+    // `+ 0.0` turns -0.0 into 0.0.
+    (x * 100.0).round() / 100.0 + 0.0
 }
 
 /// Percentage change from `base` to `value`, 0 when `base` is 0.

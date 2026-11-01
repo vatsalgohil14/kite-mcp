@@ -314,3 +314,24 @@ async fn instruments_quotes_and_history() {
         .await;
     assert!(err.contains("search_instruments"));
 }
+
+#[tokio::test]
+async fn permission_error_explains_plan_limit() {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/quote/ltp"))
+        .respond_with(ResponseTemplate::new(403).set_body_json(json!({
+            "status": "error", "error_type": "PermissionException",
+            "message": "Insufficient permission for that call."
+        })))
+        .mount(&mock)
+        .await;
+    let mut s = Server::start(&mock.uri()).await;
+    let err = s
+        .call_err("get_ltp", json!({"instruments": ["NSE:INFY"]}))
+        .await;
+    assert!(err.contains("paid"), "{err}");
+    // A permission error must not log the user out.
+    let status = s.call("session_status", json!({})).await;
+    assert_eq!(status["logged_in"], true);
+}

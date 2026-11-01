@@ -43,4 +43,10 @@ impl KiteError {
         matches!(self, KiteError::NotLoggedIn)
             || matches!(self, KiteError::Api { error_type, .. } if error_type == "TokenException")
     }
+
+    /// True when the API key's plan does not include the endpoint (e.g. market data on
+    /// the free Personal plan).
+    pub fn is_permission_error(&self) -> bool {
+        matches!(self, KiteError::Api { error_type, .. } if error_type == "PermissionException")
+    }
 }

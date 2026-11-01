@@ -28,6 +28,9 @@ Order placement arrives in phase 3.
 | | `get_ohlc` / `get_ltp` | OHLC + LTP, or LTP only (up to 1000) |
 | | `get_historical_data` | OHLCV(+OI) candles; long ranges auto-split into multiple requests |
 
+Market data tools (`get_quote`, `get_ohlc`, `get_ltp`, `get_historical_data`) need a paid
+Kite Connect plan; on the free Personal plan they return a `PermissionException`.
+
 The instrument master (~100k rows) is downloaded once a day after 08:30 IST and cached in
 `~/.config/kite-mcp/instruments.csv`.
 
@@ -62,7 +65,8 @@ The instrument master (~100k rows) is downloaded once a day after 08:30 IST and 
    }
    ```
 
-5. Ask Claude to "log in to Kite", open the link, sign in. The session is saved to
+5. Ask Claude to "log in to Kite", open the link, sign in. Or log in from a terminal
+   before starting Claude: `./target/release/kite-mcp login`. The session is saved to
    `~/.config/kite-mcp/session.json` (mode 600) and reused until it expires (~06:00 IST).
 
 ## Configuration

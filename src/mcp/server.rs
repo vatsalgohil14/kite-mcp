@@ -72,6 +72,13 @@ impl KiteMcp {
                         msg.push_str(" The Kite session has expired; call `login` again.");
                     }
                 }
+                if e.is_permission_error() {
+                    msg.push_str(
+                        " Market data (quotes, LTP, OHLC, historical candles) needs a paid \
+                         Kite Connect plan; the free Personal app only covers account, \
+                         portfolio and order data.",
+                    );
+                }
                 Ok(CallToolResult::error(vec![ContentBlock::text(msg)]))
             }
         }

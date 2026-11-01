@@ -37,6 +37,10 @@ async fn main() -> anyhow::Result<()> {
     let auth = Auth::new(config, client.clone());
     auth.restore().context("restoring saved session")?;
 
+    if std::env::args().nth(1).as_deref() == Some("login") {
+        return login_cli(&auth).await;
+    }
+
     tracing::info!("starting {} on stdio", env!("CARGO_PKG_NAME"));
     let service = KiteMcp::new(client, auth, instruments)
         .serve(stdio())
@@ -44,4 +48,35 @@ async fn main() -> anyhow::Result<()> {
         .context("starting MCP server")?;
     service.waiting().await?;
     Ok(())
+}
+
+/// `kite-mcp login`: runs the login flow from a terminal and saves the session, so the
+/// MCP server starts already logged in.
+async fn login_cli(auth: &Arc<Auth>) -> anyhow::Result<()> {
+    let start = auth.start_login().await?;
+    if !start.callback_listening {
+        anyhow::bail!("{}", start.note);
+    }
+    println!(
+        "Open this URL and sign in to Kite:\n\n  {}\n",
+        start.login_url
+    );
+    println!(
+        "Waiting for the redirect to {} (5 minutes)...",
+        start.redirect_url
+    );
+    for _ in 0..300 {
+        let status = auth.status();
+        if status.logged_in {
+            println!(
+                "Logged in as {} ({}). Session valid until {}.",
+                status.user_name.unwrap_or_default(),
+                status.user_id.unwrap_or_default(),
+                status.expires_at.unwrap_or_default()
+            );
+            return Ok(());
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+    anyhow::bail!("timed out waiting for login")
 }
