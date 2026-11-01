@@ -223,3 +223,48 @@ async fn permission_error_explains_plan_limit() {
     let status = s.call("session_status", json!({})).await;
     assert_eq!(status["logged_in"], true);
 }
+
+/// A login saved by another process (Chat, Code, `kite-mcp login`) is picked up by an
+/// already-running server without a restart.
+#[tokio::test]
+async fn running_server_picks_up_session_saved_elsewhere() {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/user/profile"))
+        .and(wiremock::matchers::header(
+            "Authorization",
+            "token key:fresh",
+        ))
+        .respond_with(ok(json!({ "user_id": "AB1234", "user_name": "Test" })))
+        .with_priority(1)
+        .mount(&mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/user/profile"))
+        .respond_with(ResponseTemplate::new(403).set_body_json(json!({
+            "status": "error", "error_type": "TokenException", "message": "Token expired"
+        })))
+        .with_priority(2)
+        .mount(&mock)
+        .await;
+    let mut s = Server::start(&mock.uri()).await; // starts with token "acc"
+
+    let err = s.call_err("get_profile", json!({})).await;
+    assert!(err.contains("login"), "{err}");
+
+    // Simulate a login in another process.
+    let session = s.home.path().join("session.json");
+    let now = chrono::Utc::now();
+    std::fs::write(
+        &session,
+        json!({ "user_id": "AB1234", "user_name": "Test", "access_token": "fresh",
+                "created_at": now, "expires_at": now + chrono::Duration::hours(6) })
+        .to_string(),
+    )
+    .unwrap();
+
+    let profile = s.call("get_profile", json!({})).await;
+    assert_eq!(profile["user_id"], "AB1234");
+    let status = s.call("session_status", json!({})).await;
+    assert_eq!(status["logged_in"], true);
+}

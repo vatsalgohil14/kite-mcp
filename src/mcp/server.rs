@@ -101,7 +101,11 @@ impl KiteMcp {
                     if let Err(clear_err) = self.auth.clear() {
                         tracing::warn!("failed to clear session: {clear_err}");
                     }
-                    if !matches!(e, KiteError::NotLoggedIn) {
+                    // Another process may have logged in meanwhile.
+                    self.auth.sync();
+                    if self.auth.status().logged_in {
+                        msg.push_str(" A newer Kite session was found; retry the call.");
+                    } else if !matches!(e, KiteError::NotLoggedIn) {
                         msg.push_str(" The Kite session has expired; call `login` again.");
                     }
                 }
@@ -172,6 +176,18 @@ impl KiteMcp {
 
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for KiteMcp {
+    /// Same as the generated dispatcher, but first picks up a session saved by another
+    /// process, so one login works for Chat, Code and the terminal alike.
+    async fn call_tool(
+        &self,
+        request: rmcp::model::CallToolRequestParams,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::CallToolResponse, ErrorData> {
+        self.auth.sync();
+        let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+        self.tool_router.call(tcc).await
+    }
+
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
             .with_server_info(Implementation::new(

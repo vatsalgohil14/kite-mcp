@@ -58,20 +58,37 @@ impl Auth {
 
     /// Loads a still-valid session from disk, if any.
     pub fn restore(&self) -> Result<()> {
-        let path = self.config.session_path();
-        match store::load(&path)? {
-            Some(s) if !s.is_expired(Utc::now()) => {
-                tracing::info!("restored Kite session for {}", s.user_id);
-                self.client.set_access_token(Some(s.access_token.clone()));
-                *self.session.lock().unwrap() = Some(s);
-            }
-            Some(_) => {
-                tracing::info!("stored Kite session expired; removing it");
-                store::remove(&path)?;
-            }
-            None => {}
-        }
+        self.sync();
         Ok(())
+    }
+
+    /// Picks up a session saved by another process (Chat, Code or `kite-mcp login`) and
+    /// drops our own once it has expired. Called before every tool call; the file is tiny.
+    pub fn sync(&self) {
+        let now = Utc::now();
+        let on_disk = match store::load(&self.config.session_path()) {
+            Ok(s) => s.filter(|s| !s.is_expired(now)),
+            Err(e) => {
+                tracing::warn!("could not read saved session: {e}");
+                None
+            }
+        };
+        let mut session = self.session.lock().unwrap();
+        match on_disk {
+            Some(disk) if session.as_ref().map(|s| &s.access_token) != Some(&disk.access_token) => {
+                tracing::info!("using Kite session for {} from disk", disk.user_id);
+                self.client
+                    .set_access_token(Some(disk.access_token.clone()));
+                *session = Some(disk);
+            }
+            Some(_) => {}
+            None => {
+                if session.as_ref().is_some_and(|s| s.is_expired(now)) {
+                    self.client.set_access_token(None);
+                    *session = None;
+                }
+            }
+        }
     }
 
     pub fn login_url(&self, state: &str) -> String {
@@ -152,11 +169,21 @@ impl Auth {
         self.clear()
     }
 
-    /// Drops the local session, e.g. after a `TokenException`.
+    /// Drops our session, e.g. after a `TokenException`. The saved file is removed only if
+    /// it still holds the same token, so a newer login by another process survives.
     pub fn clear(&self) -> Result<()> {
+        let mine = self.client.access_token();
         self.client.set_access_token(None);
         *self.session.lock().unwrap() = None;
-        store::remove(&self.config.session_path())
+        let path = self.config.session_path();
+        let same = store::load(&path)
+            .ok()
+            .flatten()
+            .is_some_and(|s| Some(&s.access_token) == mine.as_ref());
+        if same {
+            store::remove(&path)?;
+        }
+        Ok(())
     }
 
     pub fn status(&self) -> SessionStatus {

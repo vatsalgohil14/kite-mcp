@@ -143,3 +143,36 @@ async fn profile_without_login_is_not_logged_in() {
     assert!(err.is_token_error());
     assert!(err.to_string().contains("login"));
 }
+
+/// Another process saving a newer session must not be undone by a stale one.
+#[tokio::test]
+async fn stale_process_keeps_newer_session_and_picks_it_up() {
+    let (server, home, _client, auth) = setup().await;
+    mock_session_and_profile(&server).await;
+    auth.complete_login("req123").await.unwrap(); // our token: acc456
+
+    // Another process logs in and overwrites the file with a new token.
+    let path = home.path().join("session.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("acc456", "newer789");
+    std::fs::write(&path, text).unwrap();
+
+    // Our token is rejected; clearing must leave the newer session on disk.
+    auth.clear().unwrap();
+    assert!(path.exists());
+    assert!(!auth.status().logged_in);
+
+    auth.sync();
+    assert!(auth.status().logged_in);
+    assert!(std::fs::read_to_string(&path).unwrap().contains("newer789"));
+}
+
+#[tokio::test]
+async fn clear_removes_own_session_file() {
+    let (server, home, _client, auth) = setup().await;
+    mock_session_and_profile(&server).await;
+    auth.complete_login("req123").await.unwrap();
+    auth.clear().unwrap();
+    assert!(!home.path().join("session.json").exists());
+}
