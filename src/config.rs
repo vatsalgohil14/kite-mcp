@@ -54,12 +54,6 @@ pub struct SafetyConfig {
     pub require_confirmation: bool,
     /// Validate and log orders but never send them to Kite.
     pub dry_run: bool,
-    /// Max value (price x quantity, INR) of a single order. 0 disables the check.
-    pub max_order_value: f64,
-    /// Max quantity of a single order. 0 disables the check.
-    pub max_quantity: i64,
-    /// Max orders placed per day through this server. 0 disables the check.
-    pub max_orders_per_day: usize,
     /// If non-empty, only these exchanges may be traded (e.g. ["NSE", "BSE"]).
     pub allowed_exchanges: Vec<String>,
     /// If non-empty, only these products may be used (e.g. ["CNC"]).
@@ -76,9 +70,6 @@ impl Default for SafetyConfig {
             read_only: false,
             require_confirmation: true,
             dry_run: false,
-            max_order_value: 25_000.0,
-            max_quantity: 0,
-            max_orders_per_day: 50,
             allowed_exchanges: Vec::new(),
             allowed_products: Vec::new(),
             blocked_symbols: Vec::new(),

@@ -333,9 +333,6 @@ impl KiteMcp {
 
     /// Executes a validated action, honouring dry-run and recording it in the audit log.
     pub(crate) async fn execute(&self, action: &str, request: Value) -> Result<Value> {
-        if matches!(action, "place_order" | "place_gtt") {
-            self.safety.check_daily_count()?;
-        }
         if self.safety.config.dry_run {
             let resp =
                 json!({ "dry_run": true, "message": "Validated but not sent (dry_run = true)." });
@@ -471,9 +468,7 @@ impl KiteMcp {
             tradingsymbol: &a.tradingsymbol,
             product: &a.product,
             quantity: a.quantity,
-            reference_price,
         })?;
-        self.safety.check_daily_count()?;
 
         let margins = self
             .client
@@ -509,18 +504,11 @@ impl KiteMcp {
         let price = args
             .price
             .or((current.price > 0.0).then_some(current.price));
-        let trigger = args
-            .trigger_price
-            .or((current.trigger_price > 0.0).then_some(current.trigger_price));
-        let ltp = self
-            .try_ltp(&current.exchange, &current.tradingsymbol)
-            .await;
         self.safety.check_order(&OrderCheck {
             exchange: &current.exchange,
             tradingsymbol: &current.tradingsymbol,
             product: &current.product,
             quantity,
-            reference_price: price.or(trigger).or(ltp),
         })?;
 
         let mut form = serde_json::Map::new();
@@ -804,10 +792,6 @@ impl KiteMcp {
             "read_only": c.read_only,
             "require_confirmation": c.require_confirmation,
             "dry_run": c.dry_run,
-            "max_order_value": c.max_order_value,
-            "max_quantity": c.max_quantity,
-            "max_orders_per_day": c.max_orders_per_day,
-            "orders_placed_today": self.safety.audit.orders_placed_today(),
             "allowed_exchanges": c.allowed_exchanges,
             "allowed_products": c.allowed_products,
             "blocked_symbols": c.blocked_symbols,

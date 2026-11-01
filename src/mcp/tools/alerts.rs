@@ -285,13 +285,11 @@ impl KiteMcp {
                 "LIMIT ATO orders need a positive `price`".into(),
             ));
         }
-        let reference = o.price.or(Some(a.value)).filter(|p| *p > 0.0);
         self.safety.check_order(&OrderCheck {
             exchange: &exchange,
             tradingsymbol: &symbol,
             product: &product,
             quantity: o.quantity,
-            reference_price: reference,
         })?;
         let basket = json!({
             "name": a.name, "type": "alert", "tags": [],

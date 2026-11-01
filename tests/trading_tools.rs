@@ -96,11 +96,11 @@ async fn place_order_needs_confirmation_then_executes_once() {
     assert_eq!(audit[0]["action"], "place_order");
     assert_eq!(audit[0]["outcome"], "ok");
     let settings = s.call("get_safety_settings", json!({})).await;
-    assert_eq!(settings["orders_placed_today"], 1);
+    assert!(settings.get("max_order_value").is_none());
 }
 
 #[tokio::test]
-async fn safety_limits_block_bad_orders() {
+async fn no_amount_limits_but_invalid_orders_are_rejected() {
     let mock = base_mock().await;
     Mock::given(method("POST"))
         .and(path("/orders/regular"))
@@ -110,14 +110,17 @@ async fn safety_limits_block_bad_orders() {
         .await;
     let mut s = Server::start(&mock.uri()).await;
 
-    let err = s.call_err("place_order", limit_buy(20, 1500.0)).await;
-    assert!(err.contains("max_order_value"), "{err}");
+    // Large orders are not capped: they go to the normal preview.
+    let big = s.call("place_order", limit_buy(500, 1500.0)).await;
+    assert_eq!(big["status"], "needs_confirmation");
+    assert_eq!(big["preview"]["estimated_value"], 750000.0);
 
     let mut market = limit_buy(1, 0.0);
     market["order_type"] = "MARKET".into();
     market.as_object_mut().unwrap().remove("price");
-    let err = s.call_err("place_order", market).await;
-    assert!(err.contains("cannot verify"), "{err}");
+    // MARKET orders work without a live price.
+    let m = s.call("place_order", market).await;
+    assert_eq!(m["status"], "needs_confirmation");
 
     let err = s
         .call_err(

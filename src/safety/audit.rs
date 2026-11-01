@@ -16,7 +16,7 @@ pub enum Outcome {
 #[derive(Debug, Serialize, Deserialize)]
 struct Entry {
     ts: String,
-    /// IST date, used for daily counts.
+    /// IST trading date of the entry.
     date_ist: String,
     action: String,
     outcome: Outcome,
@@ -82,20 +82,6 @@ impl AuditLog {
         }
     }
 
-    /// Orders successfully placed today (IST), including GTT placements.
-    pub fn orders_placed_today(&self) -> usize {
-        let _g = self.lock.lock().unwrap();
-        let Ok(text) = std::fs::read_to_string(&self.path) else {
-            return 0;
-        };
-        let today = today_ist();
-        text.lines()
-            .filter_map(|l| serde_json::from_str::<Entry>(l).ok())
-            .filter(|e| e.date_ist == today && e.outcome == Outcome::Ok)
-            .filter(|e| matches!(e.action.as_str(), "place_order" | "place_gtt"))
-            .count()
-    }
-
     /// The most recent `n` entries, newest first.
     pub fn recent(&self, n: usize) -> Vec<serde_json::Value> {
         let _g = self.lock.lock().unwrap();
@@ -116,16 +102,14 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn counts_only_successful_placements_today() {
+    fn records_and_reads_back_newest_first() {
         let dir = tempfile::tempdir().unwrap();
         let log = AuditLog::new(dir.path().join("audit.jsonl"));
         log.record("place_order", Outcome::Ok, &json!({}), &json!({}));
-        log.record("place_order", Outcome::Error, &json!({}), &json!({}));
-        log.record("place_order", Outcome::DryRun, &json!({}), &json!({}));
-        log.record("cancel_order", Outcome::Ok, &json!({}), &json!({}));
-        log.record("place_gtt", Outcome::Ok, &json!({}), &json!({}));
-        assert_eq!(log.orders_placed_today(), 2);
-        assert_eq!(log.recent(2).len(), 2);
-        assert_eq!(log.recent(1)[0]["action"], "place_gtt");
+        log.record("cancel_order", Outcome::Error, &json!({}), &json!({}));
+        let recent = log.recent(5);
+        assert_eq!(recent.len(), 2);
+        assert_eq!(recent[0]["action"], "cancel_order");
+        assert_eq!(recent[1]["outcome"], "ok");
     }
 }

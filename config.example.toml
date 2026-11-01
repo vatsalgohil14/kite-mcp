@@ -13,13 +13,7 @@ read_only = false
 require_confirmation = true
 # Validate and log orders without sending them.
 dry_run = false
-# Max value of one order in INR (price x quantity). 0 disables.
-max_order_value = 25000
-# Max quantity of one order. 0 disables.
-max_quantity = 0
-# Max orders + GTTs placed per day through this server. 0 disables.
-max_orders_per_day = 50
-# Empty lists allow everything.
+# Optional restrictions. Empty lists allow everything.
 allowed_exchanges = []      # e.g. ["NSE", "BSE"]
 allowed_products = []       # e.g. ["CNC"]
 blocked_symbols = []

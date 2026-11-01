@@ -117,7 +117,6 @@ impl KiteMcp {
                 tradingsymbol: &a.tradingsymbol,
                 product: &product,
                 quantity: leg.quantity,
-                reference_price: Some(leg.price),
             })?;
             legs.push(json!({
                 "exchange": a.exchange, "tradingsymbol": a.tradingsymbol,

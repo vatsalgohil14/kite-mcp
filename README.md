@@ -64,8 +64,9 @@ WebSocket ticker — 55 tools in total.
 
 Order, GTT, position and ATO-alert tools move real money. By default:
 
-1. They **validate** the order (instrument exists, lot size, price fields for the order type)
-   and check your limits.
+1. They **validate** the order: the instrument exists, quantity is a multiple of the lot
+   size, and the price fields match the order type. There are **no amount, quantity or
+   daily-count limits**.
 2. They return a **preview** (summary, estimated value, margin and charges) with a
    `confirm_token`. **Nothing is sent to Kite** until `confirm_action` is called with that
    token, within 2 minutes. Claude is instructed to only confirm after you approve.
@@ -79,16 +80,11 @@ Configure in `config.toml` (see [config.example.toml](config.example.toml)):
 | `read_only` | `false` | Don't register any tool that changes anything |
 | `require_confirmation` | `true` | Preview + `confirm_action` two-step flow |
 | `dry_run` | `false` | Validate and log, never send to Kite |
-| `max_order_value` | `25000` | Max ₹ per order (price × qty); `0` disables |
-| `max_quantity` | `0` (off) | Max quantity per order |
-| `max_orders_per_day` | `50` | Max orders + GTTs placed per day; `0` disables |
-| `allowed_exchanges` | `[]` (all) | e.g. `["NSE", "BSE"]` |
-| `allowed_products` | `[]` (all) | e.g. `["CNC"]` for delivery only |
-| `blocked_symbols` | `[]` | Tradingsymbols that can never be traded |
+| `allowed_exchanges` | `[]` (all) | Optional, e.g. `["NSE", "BSE"]` |
+| `allowed_products` | `[]` (all) | Optional, e.g. `["CNC"]` for delivery only |
+| `blocked_symbols` | `[]` (none) | Optional tradingsymbols that can never be traded |
 | `order_tag` | `"kitemcp"` | Tag added to every order |
 
-When the live price isn't available (free plan), MARKET and SL-M orders can't be checked
-against `max_order_value` and are refused; use LIMIT orders, or set `max_order_value = 0`.
 
 ## Setup
 
