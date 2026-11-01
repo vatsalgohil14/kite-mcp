@@ -1,0 +1,7 @@
+# Copy to ~/.config/personal-kite-mcp/config.toml and chmod 600.
+
+api_key = "your_api_key"
+api_secret = "your_api_secret"
+
+# Must match the Redirect URL of your Kite Connect app: http://127.0.0.1:<port>/callback
+callback_port = 5005
