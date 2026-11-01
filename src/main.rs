@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use personal_kite_mcp::auth::Auth;
-use personal_kite_mcp::config::Config;
-use personal_kite_mcp::instruments::InstrumentStore;
-use personal_kite_mcp::kite::KiteClient;
-use personal_kite_mcp::mcp::KiteMcp;
+use kite_mcp::auth::Auth;
+use kite_mcp::config::Config;
+use kite_mcp::instruments::InstrumentStore;
+use kite_mcp::kite::KiteClient;
+use kite_mcp::mcp::KiteMcp;
 use rmcp::ServiceExt;
 use rmcp::transport::stdio;
 use tracing_subscriber::EnvFilter;

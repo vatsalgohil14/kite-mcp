@@ -38,15 +38,13 @@ impl Default for Config {
 }
 
 impl Config {
-    /// `$KITE_MCP_HOME`, else `~/.config/personal-kite-mcp`.
+    /// `$KITE_MCP_HOME`, else `~/.config/kite-mcp`.
     pub fn default_home() -> PathBuf {
         if let Ok(dir) = std::env::var("KITE_MCP_HOME") {
             return PathBuf::from(dir);
         }
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-        PathBuf::from(home)
-            .join(".config")
-            .join("personal-kite-mcp")
+        PathBuf::from(home).join(".config").join("kite-mcp")
     }
 
     pub fn load() -> Result<Self> {

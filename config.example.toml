@@ -1,4 +1,4 @@
-# Copy to ~/.config/personal-kite-mcp/config.toml and chmod 600.
+# Copy to ~/.config/kite-mcp/config.toml and chmod 600.
 
 api_key = "your_api_key"
 api_secret = "your_api_secret"

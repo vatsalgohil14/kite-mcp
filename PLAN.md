@@ -1,4 +1,4 @@
-# personal-kite-mcp — Implementation Plan
+# kite-mcp — Implementation Plan
 
 A local MCP server, written in Rust, that wraps the Zerodha **Kite Connect v3** REST API (and later the WebSocket ticker).
 Claude (Desktop / Code) launches it over **stdio** and calls its tools.
@@ -8,7 +8,7 @@ Claude (Desktop / Code) launches it over **stdio** and calls its tools.
 ## 1. Architecture
 
 ```
-Claude ──stdio(JSON-RPC)──▶ personal-kite-mcp
+Claude ──stdio(JSON-RPC)──▶ kite-mcp
                               ├── mcp/        tool definitions (rmcp #[tool] macros)
                               ├── kite/       typed Kite Connect client (reqwest)
                               ├── auth/       login flow + token persistence
@@ -19,7 +19,7 @@ Claude ──stdio(JSON-RPC)──▶ personal-kite-mcp
 
 - **Two layers**: a reusable `kite` client crate module (pure API, no MCP knowledge) and a thin `mcp` layer that maps tools → client calls. Keeps the API client testable and lets us reuse it later (CLI, bots).
 - **Transport**: stdio only. Logs go to **stderr / a log file**, never stdout (stdout is the MCP channel).
-- **Config**: `~/.config/personal-kite-mcp/config.toml` + env vars (`KITE_API_KEY`, `KITE_API_SECRET`). Secrets never in the repo.
+- **Config**: `~/.config/kite-mcp/config.toml` + env vars (`KITE_API_KEY`, `KITE_API_SECRET`). Secrets never in the repo.
 
 ## 2. Crates
 
@@ -48,7 +48,7 @@ Kite access tokens expire daily, so login must be smooth:
 1. Tool `login` → returns the Kite login URL (`https://kite.zerodha.com/connect/login?v=3&api_key=…`) and starts a one-shot local callback server on `127.0.0.1:<port>` (your Kite app's redirect URL must point there).
 2. You log in in the browser → Kite redirects with `request_token` → server captures it automatically.
 3. Server calls `POST /session/token` with the checksum → gets `access_token`.
-4. Token saved to `~/.config/personal-kite-mcp/session.json` (file mode `0600`) with expiry; reused on restart until it expires.
+4. Token saved to `~/.config/kite-mcp/session.json` (file mode `0600`) with expiry; reused on restart until it expires.
 5. Fallback tool `complete_login(request_token)` if you paste the token manually.
 6. Any `TokenException` (403) → clear session, tell Claude to call `login` again.
 
@@ -125,7 +125,7 @@ Annotated with MCP hints: 🟢 read-only · 🟠 mutating · 🔴 destructive / 
 - **Hard limits** in config: max order value, max quantity, max orders/day, allowed exchanges & products, symbol allow/deny list.
 - **Dry-run mode** for testing without hitting `/orders`.
 - **MCP annotations** (`destructiveHint`, `readOnlyHint`) so Claude prompts you before calling them.
-- **Audit log**: every mutating call (request + response) appended to `~/.config/personal-kite-mcp/audit.jsonl`.
+- **Audit log**: every mutating call (request + response) appended to `~/.config/kite-mcp/audit.jsonl`.
 - Auto `tag` on every order (e.g. `kitemcp`) so they're identifiable in the order book.
 
 ## 6. Cross-cutting concerns

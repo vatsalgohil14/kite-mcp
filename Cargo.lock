@@ -1035,6 +1035,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "kite-mcp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "csv",
+ "directories",
+ "governor",
+ "hex",
+ "rand 0.10.3",
+ "reqwest",
+ "rmcp",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "wiremock",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1212,33 +1239,6 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
-
-[[package]]
-name = "personal-kite-mcp"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "chrono",
- "csv",
- "directories",
- "governor",
- "hex",
- "rand 0.10.3",
- "reqwest",
- "rmcp",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "thiserror",
- "tokio",
- "toml",
- "tracing",
- "tracing-subscriber",
- "wiremock",
-]
 
 [[package]]
 name = "pin-project-lite"

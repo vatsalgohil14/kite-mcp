@@ -2,9 +2,9 @@
 
 use std::sync::Arc;
 
-use personal_kite_mcp::auth::Auth;
-use personal_kite_mcp::config::Config;
-use personal_kite_mcp::kite::KiteClient;
+use kite_mcp::auth::Auth;
+use kite_mcp::config::Config;
+use kite_mcp::kite::KiteClient;
 use serde_json::json;
 use wiremock::matchers::{body_string_contains, header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};

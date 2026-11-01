@@ -1,6 +1,6 @@
-# personal-kite-mcp
+# kite-mcp
 
-Personal MCP server for Zerodha Kite (Kite Connect v3), written in Rust. Claude launches it
+MCP server for Zerodha Kite (Kite Connect v3), written in Rust. Claude launches it
 locally over stdio. See [PLAN.md](PLAN.md) for the full roadmap.
 
 ## Status
@@ -29,19 +29,19 @@ Order placement arrives in phase 3.
 | | `get_historical_data` | OHLCV(+OI) candles; long ranges auto-split into multiple requests |
 
 The instrument master (~100k rows) is downloaded once a day after 08:30 IST and cached in
-`~/.config/personal-kite-mcp/instruments.csv`.
+`~/.config/kite-mcp/instruments.csv`.
 
 ## Setup
 
 1. Create a Kite Connect app at <https://developers.kite.trade> and set its
    **Redirect URL** to `http://127.0.0.1:5005/callback`.
-2. Put your credentials in `~/.config/personal-kite-mcp/config.toml`
+2. Put your credentials in `~/.config/kite-mcp/config.toml`
    (see [config.example.toml](config.example.toml)):
 
    ```bash
-   mkdir -p ~/.config/personal-kite-mcp
-   cp config.example.toml ~/.config/personal-kite-mcp/config.toml
-   chmod 600 ~/.config/personal-kite-mcp/config.toml
+   mkdir -p ~/.config/kite-mcp
+   cp config.example.toml ~/.config/kite-mcp/config.toml
+   chmod 600 ~/.config/kite-mcp/config.toml
    ```
 
    Or set `KITE_API_KEY` / `KITE_API_SECRET` in the environment.
@@ -49,7 +49,7 @@ The instrument master (~100k rows) is downloaded once a day after 08:30 IST and 
 4. Register with Claude Code:
 
    ```bash
-   claude mcp add kite -- "$PWD/target/release/personal-kite-mcp"
+   claude mcp add kite -- "$PWD/target/release/kite-mcp"
    ```
 
    Or Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
@@ -57,13 +57,13 @@ The instrument master (~100k rows) is downloaded once a day after 08:30 IST and 
    ```json
    {
      "mcpServers": {
-       "kite": { "command": "/Users/<you>/Desktop/personal-kite-mcp/target/release/personal-kite-mcp" }
+       "kite": { "command": "/Users/<you>/Desktop/kite-mcp/target/release/kite-mcp" }
      }
    }
    ```
 
 5. Ask Claude to "log in to Kite", open the link, sign in. The session is saved to
-   `~/.config/personal-kite-mcp/session.json` (mode 600) and reused until it expires (~06:00 IST).
+   `~/.config/kite-mcp/session.json` (mode 600) and reused until it expires (~06:00 IST).
 
 ## Configuration
 
@@ -72,7 +72,7 @@ The instrument master (~100k rows) is downloaded once a day after 08:30 IST and 
 | `api_key` / `KITE_API_KEY` | — |
 | `api_secret` / `KITE_API_SECRET` | — |
 | `callback_port` / `KITE_CALLBACK_PORT` | `5005` |
-| config dir / `KITE_MCP_HOME` | `~/.config/personal-kite-mcp` |
+| config dir / `KITE_MCP_HOME` | `~/.config/kite-mcp` |
 | log level / `KITE_MCP_LOG` | `info` (logs go to stderr) |
 
 ## Development

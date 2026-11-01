@@ -31,7 +31,7 @@ impl KiteClient {
     pub fn new(base_url: impl Into<String>, api_key: impl Into<String>) -> Result<Self> {
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent(concat!("personal-kite-mcp/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("kite-mcp/", env!("CARGO_PKG_VERSION")))
             .build()?;
         Ok(Self {
             http,

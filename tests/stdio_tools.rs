@@ -45,7 +45,7 @@ impl Server {
         )
         .unwrap();
 
-        let mut child = Command::new(env!("CARGO_BIN_EXE_personal-kite-mcp"))
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kite-mcp"))
             .env("KITE_MCP_HOME", home.path())
             .env_remove("KITE_API_KEY")
             .env_remove("KITE_API_SECRET")
