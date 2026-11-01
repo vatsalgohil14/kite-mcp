@@ -9,16 +9,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::auth::Auth;
 use crate::error::KiteError;
+use crate::instruments::InstrumentStore;
 use crate::kite::KiteClient;
 
 const INSTRUCTIONS: &str = "Tools for the user's Zerodha Kite trading account via Kite Connect. \
 Kite sessions expire daily (~06:00 IST). If a tool reports that the user is not logged in, \
-call `login`, give the user the login_url to open, then call `session_status` to confirm.";
+call `login`, give the user the login_url to open, then call `session_status` to confirm. \
+Instruments are written as EXCHANGE:TRADINGSYMBOL (e.g. NSE:INFY, NFO:NIFTY26NOV24000CE); \
+use `search_instruments` to find exact symbols for futures and options. \
+All prices are in INR and all times are IST.";
 
 #[derive(Clone)]
 pub struct KiteMcp {
-    client: Arc<KiteClient>,
-    auth: Arc<Auth>,
+    pub(crate) client: Arc<KiteClient>,
+    pub(crate) auth: Arc<Auth>,
+    pub(crate) instruments: Arc<InstrumentStore>,
     tool_router: ToolRouter<Self>,
 }
 
@@ -28,23 +33,32 @@ pub struct CompleteLoginArgs {
     pub request_token: String,
 }
 
-type ToolResult = Result<CallToolResult, ErrorData>;
+pub(crate) type ToolResult = Result<CallToolResult, ErrorData>;
 
 impl KiteMcp {
-    pub fn new(client: Arc<KiteClient>, auth: Arc<Auth>) -> Self {
+    pub fn new(
+        client: Arc<KiteClient>,
+        auth: Arc<Auth>,
+        instruments: Arc<InstrumentStore>,
+    ) -> Self {
         Self {
             client,
             auth,
-            tool_router: Self::tool_router(),
+            instruments,
+            tool_router: Self::session_router()
+                + Self::account_router()
+                + Self::portfolio_router()
+                + Self::orders_router()
+                + Self::market_router(),
         }
     }
 
     /// Turns a Kite call result into a tool result. Kite errors are returned as tool
     /// errors (visible to the model) rather than protocol errors.
-    fn respond<T: Serialize>(&self, result: Result<T, KiteError>) -> ToolResult {
+    pub(crate) fn respond<T: Serialize>(&self, result: Result<T, KiteError>) -> ToolResult {
         match result {
             Ok(value) => {
-                let json = serde_json::to_string_pretty(&value)
+                let json = serde_json::to_string(&value)
                     .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
                 Ok(CallToolResult::success(vec![ContentBlock::text(json)]))
             }
@@ -64,7 +78,7 @@ impl KiteMcp {
     }
 }
 
-#[tool_router]
+#[tool_router(router = session_router, vis = "pub(crate)")]
 impl KiteMcp {
     /// Start the Kite login flow. Returns a login URL for the user to open in a browser;
     /// the session is captured automatically by a local callback server.

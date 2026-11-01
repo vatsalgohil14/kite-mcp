@@ -15,6 +15,26 @@ pub struct SessionData {
     pub login_time: Option<String>,
 }
 
+/// Funds and margins for one segment (`equity` or `commodity`).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SegmentMargins {
+    pub enabled: bool,
+    pub net: f64,
+    pub available: serde_json::Map<String, serde_json::Value>,
+    pub utilised: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Response of `GET /user/margins`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Margins {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub equity: Option<SegmentMargins>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub commodity: Option<SegmentMargins>,
+}
+
 /// Response of `GET /user/profile`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {

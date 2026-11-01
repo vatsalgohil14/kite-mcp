@@ -2,7 +2,7 @@ use sha2::{Digest, Sha256};
 
 use crate::error::Result;
 use crate::kite::client::KiteClient;
-use crate::kite::models::user::{Profile, SessionData};
+use crate::kite::models::user::{Margins, Profile, SegmentMargins, SessionData};
 use crate::kite::ratelimit::Bucket;
 
 /// `sha256(api_key + request_token + api_secret)` as lowercase hex.
@@ -44,6 +44,17 @@ impl KiteClient {
 
     pub async fn profile(&self) -> Result<Profile> {
         self.get(Bucket::Default, "/user/profile", &[]).await
+    }
+
+    /// Funds and margins for all segments.
+    pub async fn margins(&self) -> Result<Margins> {
+        self.get(Bucket::Default, "/user/margins", &[]).await
+    }
+
+    /// Funds and margins for one segment: `equity` or `commodity`.
+    pub async fn segment_margins(&self, segment: &str) -> Result<SegmentMargins> {
+        self.get(Bucket::Default, &format!("/user/margins/{segment}"), &[])
+            .await
     }
 }
 

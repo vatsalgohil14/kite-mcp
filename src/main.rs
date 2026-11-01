@@ -3,6 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use personal_kite_mcp::auth::Auth;
 use personal_kite_mcp::config::Config;
+use personal_kite_mcp::instruments::InstrumentStore;
 use personal_kite_mcp::kite::KiteClient;
 use personal_kite_mcp::mcp::KiteMcp;
 use rmcp::ServiceExt;
@@ -32,11 +33,12 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let client = Arc::new(KiteClient::new(&config.api_base, &config.api_key)?);
+    let instruments = Arc::new(InstrumentStore::new(client.clone(), config.home.clone()));
     let auth = Auth::new(config, client.clone());
     auth.restore().context("restoring saved session")?;
 
     tracing::info!("starting {} on stdio", env!("CARGO_PKG_NAME"));
-    let service = KiteMcp::new(client, auth)
+    let service = KiteMcp::new(client, auth, instruments)
         .serve(stdio())
         .await
         .context("starting MCP server")?;

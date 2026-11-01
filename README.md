@@ -5,15 +5,31 @@ locally over stdio. See [PLAN.md](PLAN.md) for the full roadmap.
 
 ## Status
 
-Phase 1 — foundation: login flow, session persistence, profile.
+Phases 1–2 done: login, account, portfolio, order book and market data (read-only).
+Order placement arrives in phase 3.
 
-| Tool | What it does |
-|---|---|
-| `login` | Returns a Kite login URL and captures the session via a local callback |
-| `complete_login` | Manual fallback: pass the `request_token` from the redirect URL |
-| `session_status` | Logged-in user and session expiry |
-| `logout` | Invalidates the token and deletes the saved session |
-| `get_profile` | User profile, enabled exchanges/products/order types |
+| Area | Tool | What it does |
+|---|---|---|
+| Session | `login` | Returns a Kite login URL and captures the session via a local callback |
+| | `complete_login` | Manual fallback: pass the `request_token` from the redirect URL |
+| | `session_status` | Logged-in user and session expiry |
+| | `logout` | Invalidates the token and deletes the saved session |
+| Account | `get_profile` | User profile, enabled exchanges/products/order types |
+| | `get_margins` | Funds and margins (equity / commodity) |
+| Portfolio | `get_holdings` | Holdings with per-stock and total P&L, day change; filter/sort |
+| | `get_positions` | Net or day positions with P&L / M2M |
+| | `get_auctions` | Holdings eligible for auction |
+| Orders | `get_orders` | Today's order book, newest first; filter by status/symbol/tag |
+| | `get_order_history` | Every status transition of one order |
+| | `get_trades` / `get_order_trades` | Executed fills |
+| Market | `search_instruments` | Find stocks, futures, options by symbol/name/expiry/strike |
+| | `get_instrument` | Token, lot size, tick size for one instrument |
+| | `get_quote` | Full quote (optionally with depth), up to 500 instruments |
+| | `get_ohlc` / `get_ltp` | OHLC + LTP, or LTP only (up to 1000) |
+| | `get_historical_data` | OHLCV(+OI) candles; long ranges auto-split into multiple requests |
+
+The instrument master (~100k rows) is downloaded once a day after 08:30 IST and cached in
+`~/.config/personal-kite-mcp/instruments.csv`.
 
 ## Setup
 

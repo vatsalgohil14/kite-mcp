@@ -18,6 +18,12 @@ pub enum KiteError {
     #[error("configuration error: {0}")]
     Config(String),
 
+    #[error("invalid input: {0}")]
+    InvalidInput(String),
+
+    #[error("not found: {0}")]
+    NotFound(String),
+
     #[error("login failed: {0}")]
     Login(String),
 

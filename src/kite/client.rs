@@ -114,6 +114,21 @@ impl KiteClient {
         self.send(bucket, req).await
     }
 
+    /// Authenticated GET returning the raw body (used for the `/instruments` CSV dump).
+    pub async fn get_text(&self, bucket: Bucket, path: &str) -> Result<String> {
+        let req = self.request(Method::GET, path, true)?;
+        self.limits.acquire(bucket).await;
+        let resp = req.send().await?;
+        let status = resp.status();
+        let body = resp.text().await?;
+        if status.is_success() {
+            return Ok(body);
+        }
+        Err(parse_envelope::<serde_json::Value>(status, &body)
+            .err()
+            .unwrap_or_else(|| KiteError::Decode(format!("HTTP {status}"))))
+    }
+
     /// Unauthenticated form POST (used for `/session/token`).
     pub async fn post_public<T: DeserializeOwned>(
         &self,
