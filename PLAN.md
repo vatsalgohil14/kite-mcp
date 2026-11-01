@@ -156,14 +156,14 @@ tests/                 # wiremock-based integration tests
 
 ## 8. Phases
 
-| Phase | Scope | Done when |
-|---|---|---|
-| **1. Foundation** | deps, config, logging, error types, Kite HTTP client, rate limiter, auth flow + token store, rmcp stdio server with `login`/`session_status`/`get_profile` | Claude can log you in and read your profile |
-| **2. Read-only data** | margins, holdings, positions, orders/trades listing, instruments cache + search, quotes/LTP/OHLC, historical | Claude can answer "how's my portfolio / what's RELIANCE at" |
-| **3. Trading** | safety layer, place/modify/cancel order, margins & charges preview, convert position, audit log | Preview → confirm → order placed in Kite |
-| **4. GTT, Alerts, MF** | all remaining endpoints | full REST coverage |
-| **5. Live ticker** | WebSocket binary parser, subscription manager, tick cache tools | live LTP streaming |
-| **6. Polish** | option chain, portfolio summary, README setup guide, `.mcp.json` / Claude Desktop config, CI (needs `gh auth refresh -s workflow`) | |
+| Phase | Scope | Done when | Status |
+|---|---|---|---|
+| **1. Foundation** | deps, config, logging, error types, Kite HTTP client, rate limiter, auth flow + token store, rmcp stdio server with `login`/`session_status`/`get_profile` | Claude can log you in and read your profile | ✅ done |
+| **2. Read-only data** | margins, holdings, positions, orders/trades listing, instruments cache + search, quotes/LTP/OHLC, historical | Claude can answer "how's my portfolio / what's RELIANCE at" | ✅ done |
+| **3. Trading** | safety layer, place/modify/cancel order, margins & charges preview, convert position, audit log | Preview → confirm → order placed in Kite | ✅ done (live orders need a static IP) |
+| **4. GTT, Alerts, MF** | all remaining endpoints | full REST coverage | ✅ done (MF is read-only: Kite removed MF order APIs) |
+| **5. Live ticker** | WebSocket binary parser, subscription manager, tick cache tools | live LTP streaming | ✅ done (needs paid plan) |
+| **6. Polish** | option chain, portfolio summary, README setup guide, `.mcp.json` / Claude Desktop config, CI (needs `gh auth refresh -s workflow`) | | ✅ done except CI |
 
 ## 9. Testing
 

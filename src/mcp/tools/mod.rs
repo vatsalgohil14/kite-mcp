@@ -1,9 +1,16 @@
-//! Tool groups. Each module adds one `#[tool_router]` impl block to `KiteMcp`.
+//! Tool groups. Each module adds one or more `#[tool_router]` impl blocks to `KiteMcp`.
 
 mod account;
+mod alerts;
+mod gtt;
+mod insights;
+mod live;
+mod margins;
 mod market;
+pub(crate) mod mf;
 mod orders;
 mod portfolio;
+pub(crate) mod trading;
 
 /// Rounds to 2 decimals to keep tool output compact.
 pub(crate) fn r2(x: f64) -> f64 {

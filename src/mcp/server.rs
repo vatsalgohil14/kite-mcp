@@ -11,20 +11,39 @@ use crate::auth::Auth;
 use crate::error::KiteError;
 use crate::instruments::InstrumentStore;
 use crate::kite::KiteClient;
+use crate::mcp::tools::mf::MfCache;
+use crate::safety::Safety;
+use crate::ticker::Ticker;
 
 const INSTRUCTIONS: &str = "Tools for the user's Zerodha Kite trading account via Kite Connect. \
 Kite sessions expire daily (~06:00 IST). If a tool reports that the user is not logged in, \
 call `login`, give the user the login_url to open, then call `session_status` to confirm. \
 Instruments are written as EXCHANGE:TRADINGSYMBOL (e.g. NSE:INFY, NFO:NIFTY26NOV24000CE); \
 use `search_instruments` to find exact symbols for futures and options. \
-All prices are in INR and all times are IST.";
+All prices are in INR and all times are IST. \
+Tools that place, modify or cancel orders, convert positions, or create GTTs / order-placing \
+alerts involve real money. They return a preview with a `confirm_token`: always show the \
+summary to the user and call `confirm_action` only after the user explicitly approves. \
+Never confirm on your own initiative.";
 
 #[derive(Clone)]
 pub struct KiteMcp {
     pub(crate) client: Arc<KiteClient>,
     pub(crate) auth: Arc<Auth>,
     pub(crate) instruments: Arc<InstrumentStore>,
+    pub(crate) safety: Arc<Safety>,
+    pub(crate) ticker: Arc<Ticker>,
+    pub(crate) mf_cache: Arc<MfCache>,
     tool_router: ToolRouter<Self>,
+}
+
+/// Shared services the server is built from.
+pub struct Services {
+    pub client: Arc<KiteClient>,
+    pub auth: Arc<Auth>,
+    pub instruments: Arc<InstrumentStore>,
+    pub safety: Arc<Safety>,
+    pub ticker: Arc<Ticker>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -36,20 +55,34 @@ pub struct CompleteLoginArgs {
 pub(crate) type ToolResult = Result<CallToolResult, ErrorData>;
 
 impl KiteMcp {
-    pub fn new(
-        client: Arc<KiteClient>,
-        auth: Arc<Auth>,
-        instruments: Arc<InstrumentStore>,
-    ) -> Self {
+    pub fn new(s: Services) -> Self {
+        let mut router = Self::session_router()
+            + Self::account_router()
+            + Self::portfolio_router()
+            + Self::orders_router()
+            + Self::market_router()
+            + Self::margins_router()
+            + Self::gtt_read_router()
+            + Self::alerts_read_router()
+            + Self::mf_router()
+            + Self::live_router()
+            + Self::insights_router()
+            + Self::safety_router();
+        // In read-only mode, tools that change anything are not registered at all.
+        if !s.safety.config.read_only {
+            router = router
+                + Self::trading_router()
+                + Self::gtt_write_router()
+                + Self::alerts_write_router();
+        }
         Self {
-            client,
-            auth,
-            instruments,
-            tool_router: Self::session_router()
-                + Self::account_router()
-                + Self::portfolio_router()
-                + Self::orders_router()
-                + Self::market_router(),
+            client: s.client,
+            auth: s.auth,
+            instruments: s.instruments,
+            safety: s.safety,
+            ticker: s.ticker,
+            mf_cache: Arc::default(),
+            tool_router: router,
         }
     }
 

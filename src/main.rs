@@ -5,7 +5,9 @@ use kite_mcp::auth::Auth;
 use kite_mcp::config::Config;
 use kite_mcp::instruments::InstrumentStore;
 use kite_mcp::kite::KiteClient;
-use kite_mcp::mcp::KiteMcp;
+use kite_mcp::mcp::{KiteMcp, Services};
+use kite_mcp::safety::Safety;
+use kite_mcp::ticker::Ticker;
 use rmcp::ServiceExt;
 use rmcp::transport::stdio;
 use tracing_subscriber::EnvFilter;
@@ -34,6 +36,8 @@ async fn main() -> anyhow::Result<()> {
 
     let client = Arc::new(KiteClient::new(&config.api_base, &config.api_key)?);
     let instruments = Arc::new(InstrumentStore::new(client.clone(), config.home.clone()));
+    let safety = Arc::new(Safety::new(config.safety.clone(), config.home.clone()));
+    let ticker = Arc::new(Ticker::new(config.ticker_url.clone(), client.clone()));
     let auth = Auth::new(config, client.clone());
     auth.restore().context("restoring saved session")?;
 
@@ -42,10 +46,16 @@ async fn main() -> anyhow::Result<()> {
     }
 
     tracing::info!("starting {} on stdio", env!("CARGO_PKG_NAME"));
-    let service = KiteMcp::new(client, auth, instruments)
-        .serve(stdio())
-        .await
-        .context("starting MCP server")?;
+    let service = KiteMcp::new(Services {
+        client,
+        auth,
+        instruments,
+        safety,
+        ticker,
+    })
+    .serve(stdio())
+    .await
+    .context("starting MCP server")?;
     service.waiting().await?;
     Ok(())
 }

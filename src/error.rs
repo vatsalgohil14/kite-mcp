@@ -21,6 +21,9 @@ pub enum KiteError {
     #[error("invalid input: {0}")]
     InvalidInput(String),
 
+    #[error("blocked by safety settings: {0}")]
+    Blocked(String),
+
     #[error("not found: {0}")]
     NotFound(String),
 

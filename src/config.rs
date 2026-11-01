@@ -19,6 +19,8 @@ pub struct Config {
     pub callback_port: u16,
     pub api_base: String,
     pub login_base: String,
+    pub ticker_url: String,
+    pub safety: SafetyConfig,
     /// Directory holding config, session and logs. Not read from the file itself.
     #[serde(skip)]
     pub home: PathBuf,
@@ -32,7 +34,55 @@ impl Default for Config {
             callback_port: DEFAULT_CALLBACK_PORT,
             api_base: DEFAULT_API_BASE.into(),
             login_base: DEFAULT_LOGIN_BASE.into(),
+            ticker_url: DEFAULT_TICKER_URL.into(),
+            safety: SafetyConfig::default(),
             home: PathBuf::new(),
+        }
+    }
+}
+
+pub const DEFAULT_TICKER_URL: &str = "wss://ws.kite.trade";
+
+/// Guards for tools that place, modify or cancel orders (`[safety]` in config.toml).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct SafetyConfig {
+    /// Don't register any tool that changes orders, positions, GTTs or alerts.
+    pub read_only: bool,
+    /// Mutating tools return a preview and a `confirm_token`; nothing is sent until
+    /// `confirm_action` is called with it.
+    pub require_confirmation: bool,
+    /// Validate and log orders but never send them to Kite.
+    pub dry_run: bool,
+    /// Max value (price x quantity, INR) of a single order. 0 disables the check.
+    pub max_order_value: f64,
+    /// Max quantity of a single order. 0 disables the check.
+    pub max_quantity: i64,
+    /// Max orders placed per day through this server. 0 disables the check.
+    pub max_orders_per_day: usize,
+    /// If non-empty, only these exchanges may be traded (e.g. ["NSE", "BSE"]).
+    pub allowed_exchanges: Vec<String>,
+    /// If non-empty, only these products may be used (e.g. ["CNC"]).
+    pub allowed_products: Vec<String>,
+    /// Tradingsymbols that may never be traded.
+    pub blocked_symbols: Vec<String>,
+    /// Tag attached to every order (alphanumeric, max 20 chars).
+    pub order_tag: String,
+}
+
+impl Default for SafetyConfig {
+    fn default() -> Self {
+        Self {
+            read_only: false,
+            require_confirmation: true,
+            dry_run: false,
+            max_order_value: 25_000.0,
+            max_quantity: 0,
+            max_orders_per_day: 50,
+            allowed_exchanges: Vec::new(),
+            allowed_products: Vec::new(),
+            blocked_symbols: Vec::new(),
+            order_tag: "kitemcp".into(),
         }
     }
 }

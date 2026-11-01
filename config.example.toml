@@ -5,3 +5,22 @@ api_secret = "your_api_secret"
 
 # Must match the Redirect URL of your Kite Connect app: http://127.0.0.1:<port>/callback
 callback_port = 5005
+
+[safety]
+# Set to true to hide every tool that changes orders, positions, GTTs or alerts.
+read_only = false
+# Preview first; nothing is sent until `confirm_action` is called with the token.
+require_confirmation = true
+# Validate and log orders without sending them.
+dry_run = false
+# Max value of one order in INR (price x quantity). 0 disables.
+max_order_value = 25000
+# Max quantity of one order. 0 disables.
+max_quantity = 0
+# Max orders + GTTs placed per day through this server. 0 disables.
+max_orders_per_day = 50
+# Empty lists allow everything.
+allowed_exchanges = []      # e.g. ["NSE", "BSE"]
+allowed_products = []       # e.g. ["CNC"]
+blocked_symbols = []
+order_tag = "kitemcp"

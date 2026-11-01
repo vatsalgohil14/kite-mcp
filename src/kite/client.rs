@@ -114,6 +114,21 @@ impl KiteClient {
         self.send(bucket, req).await
     }
 
+    /// Authenticated POST with a JSON body (margins and charges calculators).
+    pub async fn post_json<T: DeserializeOwned>(
+        &self,
+        bucket: Bucket,
+        path: &str,
+        query: &[(&str, String)],
+        body: &serde_json::Value,
+    ) -> Result<T> {
+        let req = self
+            .request(Method::POST, path, true)?
+            .query(query)
+            .json(body);
+        self.send(bucket, req).await
+    }
+
     /// Authenticated GET returning the raw body (used for the `/instruments` CSV dump).
     pub async fn get_text(&self, bucket: Bucket, path: &str) -> Result<String> {
         let req = self.request(Method::GET, path, true)?;
